@@ -1,0 +1,22 @@
+
+services: 
+  move-payment: 
+    image: nodejs
+    container_name: move-payment
+    restart: always
+    build: .
+    ports:
+      - "9090:9090"
+    volumes:
+      - .:/usr/src/app 
+      - /usr/src/app/node_modules
+    networks: 
+      - move-network 
+
+networks:
+  move-network:
+    driver: bridge
+    name: move-network
+
+volumes:
+  node_modules:
