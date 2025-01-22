@@ -61,32 +61,6 @@ export const updateUserByIDServicev1 = async (
 	}
 };
 
-// export const findUserByIDService = async (req: Request, userId: string) => {
-// 	try {
-// 		const id = userId;
-// 		const { data: userData } = await axios.get(
-// 			`http://localhost:8000/v1/api/users/${id}`,
-// 			// `${process.env.USER_SERVICE_URL}/v1/api/users/${id}`,
-// 			{
-// 				headers: {
-// 					Authorization: `${
-// 						// biome-ignore lint/complexity/useLiteralKeys: <explanation>
-// 						req.headers["authorization"]
-// 						}`,
-// 				},
-// 			},
-// 		);
-// 		console.log("userData.use", userData.use)
-// 		if (!userData) {
-// 			return null;
-// 		}
-// 		return userData.user;
-// 	} catch (error) {
-// 		console.log("Error find user: ", error);
-
-// 		throw new Error("Error find user");
-// 	}
-// };
 export const findUserByIDService = async (req: Request, userId: string) => {
 	try {
 		if (!userId) {
@@ -333,3 +307,350 @@ export const updateUserPointService = async (
 		throw error;
 	}
 };
+
+
+// ================================================================================
+
+
+interface Address {
+	village: string;
+	district: string;
+	province: string;
+}
+
+interface Filter {
+	firstName?: string | RegExp;
+	lastName?: string | RegExp;
+	fullName?: string | RegExp;
+	email?: string;
+	phone?: string;
+	role?: string;
+	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	status?: any;
+	userID?: string;
+}
+
+// GET
+export const findUserByEmailService = async (email: string) => {
+	try {
+		// cannot -pin because we need it to compared in login route
+		const user = await userModel
+			.findOne({ email, status: { $ne: "BLOCKED" } })
+			.select("-__v")
+			.exec();
+
+		if (!user) {
+			return null;
+		}
+		return user;
+	} catch (error) {
+		console.error("Error in findUserByEmailService:", error);
+		throw "Failed to retrieve user data";
+	}
+};
+export const findUserByPhoneService = async (countryCode: string, phone: string) => {
+	try {
+		// cannot -pin because we need it to compared in login route
+		const user = await userModel
+			.findOne({ countryCode, phone, status: { $ne: "BLOCKED" } })
+			.select("-__v")
+			.exec();
+
+		if (!user) {
+			return null;
+		}
+		return user;
+	} catch (error) {
+		console.error("Error in findUserByPhoneService:", error);
+		throw "Failed to retrieve user data";
+	}
+};
+
+export const findUserByIdService = async (id: string) => {
+	try {
+		const user = await userModel.findById(id).select("-pin -__v").exec();
+
+		if (!user) {
+			return null;
+		}
+		return user;
+	} catch (error) {
+		console.error("Error in findUserByIdService:", error);
+		throw new Error("Failed to retrieve user data");
+	}
+};
+
+// export const findAllUsersService = async (
+// 	limit: number,
+// 	skip: number,
+// 	filter: Filter,
+// ) => {
+// 	try {
+// 		const users = await userModel
+// 			.find(filter)
+// 			.select("-__v -pin")
+// 			.limit(limit || 50)
+// 			.sort({ createdAt: -1 })
+// 			.skip(skip || 0)
+// 			.exec();
+
+// 		return users;
+// 	} catch (error) {
+// 		console.log("findAllUsersService: ", error);
+// 		throw new Error("Error in findAllUsersService");
+// 	}
+// };
+
+export const findAllUsersService = async (
+	limit: number,
+	skip: number,
+	filter: Filter,
+) => {
+	try {
+		const users = await userModel.aggregate([
+			// Step 1: Match users based on the provided filter
+			{
+				$match: filter
+			},
+			// Step 2: Lookup wallets data by matching _id with user in wallets
+			{
+				$lookup: {
+					from: "wallets", // The name of the collection to join (make sure it's lowercase)
+					localField: "_id", // Field from users collection
+					foreignField: "user", // Field from wallets collection
+					as: "wallet" // Alias for the resulting array
+				}
+			},
+			// Step 3: Optionally unwind the wallet array if each user should have a single wallet entry
+			{
+				$unwind: {
+					path: "$wallet",
+					preserveNullAndEmptyArrays: true // Optional: Preserve users with no wallet data
+				}
+			},
+			// Step 4: Select the fields you need and exclude any unnecessary fields
+			{
+				$project: {
+					__v: 0, // Exclude the __v field
+					pin: 0, // Exclude the pin field
+					"wallet.__v": 0, // Optionally exclude fields from the wallet object
+				}
+			},
+			// Step 5: Pagination and sorting
+			{
+				$sort: { createdAt: -1 }
+			},
+			{
+				$skip: skip || 0
+			},
+			{
+				$limit: limit || 50
+			},
+		]);
+
+		return users;
+	} catch (error) {
+		console.log("findAllUsersService: ", error);
+		throw new Error("Error in findAllUsersService");
+	}
+};
+
+export const countUserService = async (filter: Filter) => {
+	try {
+		const totals = await userModel.countDocuments(filter);
+		return totals;
+	} catch (error) {
+		console.log("countUserService: ", error);
+		throw new Error("Error in countUserService");
+	}
+};
+
+// CREATE, UPDATE, DELETE
+export const createdUserService = async (
+	firstName: string,
+	lastName: string,
+	fullName: string,
+	phone: string,
+	email: string,
+	pin: string,
+	profileImage: string,
+	countryCode: string,
+	addresses: Address[],
+	userID: string,
+	staffData: TokenData,
+): Promise<IUser | null> => {
+	try {
+		// Check if the user already exists
+		const existingUser = await userModel.findOne({ email });
+		if (existingUser) {
+			console.log("come here der");
+			throw "404";
+		}
+
+		// Create new user
+		const newUser = new userModel({
+			firstName,
+			lastName,
+			fullName,
+			phone,
+			email,
+			pin, // Pin will be hashed by pre-save hook in the schema
+			profileImage,
+			countryCode,
+			userID, // Set the generated userID
+			addresses, // Add the addresses array here
+			createdBy: staffData.id,
+			createdByFullName: staffData.fullName,
+		});
+
+		// Save the user to the database
+		const savedUser = await newUser.save();
+
+		// Return the created user without sensitive fields (e.g., pin)
+		return savedUser.toObject({
+			versionKey: false,
+			transform: (_, ret) => {
+				// biome-ignore lint/performance/noDelete: <explanation>
+				delete ret.pin;
+				return ret;
+			},
+		});
+	} catch (error) {
+		console.log("Error creating user: ", error);
+
+		throw new Error("Error creating user");
+	}
+};
+
+export const updateUserService = async (
+	id: string,
+	updates: Partial<IUser>,
+	staffData: TokenData,
+) => {
+	const user = await userModel
+		.findByIdAndUpdate(
+			{ _id: new ObjectId(id) },
+			{
+				...updates,
+				updatedBy: staffData.id,
+				updatedByFullName: staffData.fullName,
+				updatedAt: new Date(),
+			}, // Update fields and set updatedBy and updatedAt
+			{ new: true, runValidators: true }, // Return the updated document and run validation on updates
+		)
+		.exec();
+
+	if (!user) {
+		throw {
+			code: messages.NOT_FOUND.code,
+			message: "User not found",
+		};
+	}
+	return user;
+};
+export const updateUserServiceLogin = async (
+	id: string,
+	updates: Partial<IUser>,
+) => {
+	const user = await userModel
+		.findByIdAndUpdate(
+			{ _id: new ObjectId(id) },
+			{
+				...updates,
+				updatedAt: new Date(),
+			}, // Update fields and set updatedBy and updatedAt
+			{ new: true, runValidators: true }, // Return the updated document and run validation on updates
+		)
+		.exec();
+
+	if (!user) {
+		throw {
+			code: messages.NOT_FOUND.code,
+			message: "User not found",
+		};
+	}
+	return user;
+};
+// export const updateUserService = async (
+// 	id: string,
+// 	updates: Partial<IUser>,
+// ) => {
+// 	const user = await userModel
+// 		.findByIdAndUpdate(id, updates, { new: true })
+// 		.select("-__v -pin")
+// 		.exec();
+
+// 	if (!user) {
+// 		throw {
+// 			code: messages.NOT_FOUND.code,
+// 			message: "User not found",
+// 		};
+// 	}
+// 	return user;
+// };
+
+export const deleteUserService = async (id: string) => {
+	const user = await userModel.findByIdAndDelete(id).select("-__v -pin").exec();
+	if (!user) {
+		throw new Error("User not found");
+	}
+	return user;
+};
+
+// GET PIN
+export const findUserPinByIdService = async (id: string) => {
+	try {
+		const user = await userModel.findById(id).select("-__v").exec();
+
+		if (!user) {
+			return null;
+		}
+		return user;
+	} catch (error) {
+		console.error("Error in findUserByIdService:", error);
+		throw new Error("Failed to retrieve user data");
+	}
+};
+
+//for dashboard
+export const DashboardUsersService = async (
+	pipelineMongo: any
+) => {
+	try {
+		const users = await userModel
+			.aggregate(pipelineMongo)
+
+		return users;
+	} catch (error) {
+		console.log("findAllUsersService: ", error);
+		throw new Error("Error in findAllUsersService");
+	}
+};
+
+//get all users device token 
+export const getUsersWithDeviceToken = async () => {
+
+	try {
+		const pipeline = [
+			{
+				$match: {
+					role: "CUSTOMER",
+					status: { $ne: "BLOCKED" },
+					deviceToken: { $nin: [null, "null"] },
+				},
+			},
+			{
+				$project: {
+					deviceToken: 1,
+					_id: 1,
+				},
+			},
+		];
+
+		const users = await userModel.aggregate(pipeline);
+		return users;
+	} catch (error) {
+		console.error('Error fetching users:', error);
+		throw error;
+	}
+}; 

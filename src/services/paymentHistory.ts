@@ -12,16 +12,10 @@ dotenv.config();
 // POST
 export const createdPaymentHistoryService = async (
 
-	{ user,
+	{
+		user,
 		paymentID,
-		topupPackage,
-		topupPackageID,
-		credit,
-		remainingCredit,
-		isPromotion,
-		promotionCredit,
 		price,
-		point,
 		currency,
 		status,
 		paymentType,
@@ -33,14 +27,6 @@ export const createdPaymentHistoryService = async (
 		omiseCardID,
 		transactionID,
 		bankName,
-		bankTransactionDetail,
-		bankMessage,
-		bankCode,
-		destMerchantId,
-		destMerchantName,
-		taxRate,
-		taxPrice,
-		totalPriceWithTax,
 		createdBy,
 		createdByFullName,
 
@@ -48,14 +34,7 @@ export const createdPaymentHistoryService = async (
 		{
 			user: string,
 			paymentID?: string,
-			topupPackage: string,
-			topupPackageID: string,
-			credit: number,
-			remainingCredit: number,
-			isPromotion: boolean,
-			promotionCredit: number,
 			price: number,
-			point: number,
 			currency?: string,
 			status: string,
 			paymentType: string,
@@ -67,14 +46,6 @@ export const createdPaymentHistoryService = async (
 			omiseCardID?: string,
 			transactionID: string,
 			bankName?: string,
-			bankTransactionDetail?: string,
-			bankMessage?: string,
-			bankCode?: string,
-			destMerchantId?: string,
-			destMerchantName?: string,
-			taxRate?: number,
-			taxPrice?: number,
-			totalPriceWithTax?: number,
 			createdBy: string,
 			createdByFullName: string,
 		}
@@ -90,14 +61,7 @@ export const createdPaymentHistoryService = async (
 		const newRecord = new paymentHistoryModel({
 			user,
 			paymentID,
-			topupPackage,
-			topupPackageID,
-			credit,
-			remainingCredit,
-			isPromotion,
-			promotionCredit,
 			price,
-			point,
 			currency,
 			status,
 			paymentType,
@@ -109,14 +73,6 @@ export const createdPaymentHistoryService = async (
 			omiseCardID,
 			transactionID,
 			bankName,
-			bankTransactionDetail,
-			bankMessage,
-			bankCode,
-			destMerchantId,
-			destMerchantName,
-			taxRate,
-			taxPrice,
-			totalPriceWithTax,
 			createdBy,
 			createdByFullName,
 		});
@@ -204,38 +160,38 @@ export const fetchPaymentHistoriesWithPagination = async (
 	}
 };
 //Get paymentHistories with populate taxInvoices
-export const fetchPaymentHistoriesPopulateTaxinvoicesWithPagination = async (
-	filter: object,
-	taxInvoiceStatus: string,
-	skip: number,
-	limit: number
-): Promise<{ payments: any[]; totalCount: number }> => {
-	try {
-		const payments = await paymentHistoryModel
-			.find(filter)
-			.skip(skip)
-			.sort({ createdAt: -1 })
-			.limit(limit)
-			.populate({
-				path: 'taxinvoiceId',
-				model: 'TaxInvoice',
-				select: 'status',
-				match: { status: taxInvoiceStatus }, // Replace 'desiredStatus' with the actual status you want to filter by
-			})
-			.exec();
-		const totalCount = await paymentHistoryModel.countDocuments(filter).exec();
-		if (taxInvoiceStatus !== "") {
-			// Optionally filter out payments where taxinvoiceId is null
-			const filteredPayments = payments.filter(payment => payment.taxinvoiceId !== null);
-			return { payments: filteredPayments, totalCount: filteredPayments.length };
-		}
+// export const fetchPaymentHistoriesPopulateTaxinvoicesWithPagination = async (
+// 	filter: object,
+// 	taxInvoiceStatus: string,
+// 	skip: number,
+// 	limit: number
+// ): Promise<{ payments: any[]; totalCount: number }> => {
+// 	try {
+// 		const payments = await paymentHistoryModel
+// 			.find(filter)
+// 			.skip(skip)
+// 			.sort({ createdAt: -1 })
+// 			.limit(limit)
+// 			.populate({
+// 				path: 'taxinvoiceId',
+// 				model: 'TaxInvoice',
+// 				select: 'status',
+// 				match: { status: taxInvoiceStatus }, // Replace 'desiredStatus' with the actual status you want to filter by
+// 			})
+// 			.exec();
+// 		const totalCount = await paymentHistoryModel.countDocuments(filter).exec();
+// 		if (taxInvoiceStatus !== "") {
+// 			// Optionally filter out payments where taxinvoiceId is null
+// 			const filteredPayments = payments.filter(payment => payment.taxinvoiceId !== null);
+// 			return { payments: filteredPayments, totalCount: filteredPayments.length };
+// 		}
 
-		return { payments, totalCount };
-	} catch (error) {
-		console.error("Error in fetchPaymentHistoriessWithPagination:", error);
-		throw new Error("Failed to retrieve all data");
-	}
-};
+// 		return { payments, totalCount };
+// 	} catch (error) {
+// 		console.error("Error in fetchPaymentHistoriessWithPagination:", error);
+// 		throw new Error("Failed to retrieve all data");
+// 	}
+// };
 //Get paymentHistories for query taxInvoice=null
 export const fetchPaymentHistoriessWithPaginationNullInvoiceId = async (
 	filter: object,

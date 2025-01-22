@@ -7,6 +7,8 @@ import axios, { AxiosResponse } from "axios";
 import {
 	findUserByIDService,
 	updateUserByIDService,
+	findUserDataByIdService,
+	updateUserService
 } from "../../services/user";
 import omise from 'omise';
 import qs from 'qs';
@@ -117,10 +119,11 @@ export const createCard = async (req: Request, res: Response): Promise<void> => 
 		}
 
 		const user = (req as any).user;
+		console.log("==============================user: ", user);
 		let opnCustomerID: string = "";
 		const userId: string = user.id;
 
-		const customerMove = await findUserByIDService(req, userId);
+		const customerMove: any = await findUserDataByIdService(userId);
 
 		if (customerMove && customerMove.userOpnID) {
 			opnCustomerID = customerMove.userOpnID;
@@ -134,15 +137,16 @@ export const createCard = async (req: Request, res: Response): Promise<void> => 
 			try {
 				const card = await clientOmise.customers.create(customerData);
 
-				await axios.put(
-					`${process.env.USER_SERVICE_URL}/v1/api/users/${user.id}`,
-					{ userOpnID: card.id, defaultCard: card.default_card },
-					{
-						headers: {
-							Authorization: `${req.headers["authorization"]}`,
-						},
-					}
-				);
+				await updateUserService(user.id, { userOpnID: card.id, defaultCard: card.default_card }, user);
+				// await axios.put(
+				// 	`${process.env.USER_SERVICE_URL}/v1/api/users/${user.id}`,
+				// 	{ userOpnID: card.id, defaultCard: card.default_card },
+				// 	{
+				// 		headers: {
+				// 			Authorization: `${req.headers["authorization"]}`,
+				// 		},
+				// 	}
+				// );
 
 				res.status(201).json({
 					code: 'CREATE_SUCCESSFUL',
@@ -315,8 +319,10 @@ export const getCardByID = async (req: Request, res: Response) => {
 		const user = (req as any).user;  // Assuming user is populated in the request
 		const cardToken = req.params.id;
 
+		console.log("======cardToken: ", cardToken);
+
 		// Fetch customer details from external API (if any)
-		const userData = await findUserByIDService(req, user.id);
+		const userData: any = await findUserDataByIdService(user.id);
 
 		const cardDetail = await clientOmise.customers.retrieveCard(userData.userOpnID, cardToken);
 
@@ -352,7 +358,7 @@ export const getCards = async (req: Request, res: Response) => {
 		const userId: string = user.id;
 
 		// Fetch customer details from external API
-		const userData: any = await findUserByIDService(req, userId);
+		const userData: any = await findUserDataByIdService(userId);
 
 		if (!userData.userOpnID) {
 			res.status(200).json({ code: messages.SUCCESSFULLY.code, message: messages.SUCCESSFULLY.message, total: 0, data: [] });
@@ -413,25 +419,28 @@ export const deleteCardByID = async (req: Request, res: Response) => {
 	try {
 		const cardToken = req.params.id;
 		const user: any = (req as any).user;
-		const userData: any = await findUserByIDService(req, user.id);
+		const userData: any = await findUserDataByIdService(user.id);
 		const cardDetail = await clientOmise.customers.retrieve(userData.userOpnID);
 
 		if (cardDetail.cards.total <= 1) {
-			await updateUserByIDService(req, user.id, "");
+			// await updateUserByIDService(req, user.id, "");
+			await updateUserService(user.id, { defaultCard: "" }, user);
 		} else {
 			if (cardToken === userData.defaultCard) {
 				if (cardToken !== cardDetail.cards.data[0]["id"]) {
-					await updateUserByIDService(
-						req,
-						user.id,
-						cardDetail.cards.data[0]["id"],
-					);
+					// await updateUserByIDService(
+					// 	req,
+					// 	user.id,
+					// 	cardDetail.cards.data[0]["id"],
+					// );
+					await updateUserService(user.id, { defaultCard: cardDetail.cards.data[0]["id"] }, user);
 				} else {
-					await updateUserByIDService(
-						req,
-						user.id,
-						cardDetail.cards.data[1]["id"],
-					);
+					// await updateUserByIDService(
+					// 	req,
+					// 	user.id,
+					// 	cardDetail.cards.data[1]["id"],
+					// );
+					await updateUserService(user.id, { defaultCard: cardDetail.cards.data[1]["id"] }, user);
 				}
 			}
 		}
@@ -460,7 +469,7 @@ export const updateDefaultCard = async (req: Request, res: Response) => {
 	try {
 		const cardToken = req.params.id;
 		const user: any = (req as any).user;
-		const userData: any = await findUserByIDService(req, user.id); // The customer ID (e.g., 'cust_test_620z7a2tipi1rf81gqv')
+		const userData: any = await findUserDataByIdService(user.id); // The customer ID (e.g., 'cust_test_620z7a2tipi1rf81gqv')
 
 		// Step 2: Fetch the customer data from your service (if required)
 		// Example: Get customer data based on the userId (not shown in this function)

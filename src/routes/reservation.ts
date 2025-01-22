@@ -6,7 +6,7 @@ import {
 	updateReservationByID,
 	deleteReservationByID,
 } from "../controllers/reservation";
-import { CheckAuthorizationMiddleware } from "../middlewares";
+// import { CheckAuthorizationMiddleware } from "../middlewares";
 import { checkAuthorizationMiddleware } from "../middlewares";
 import {
 	validateCreateReservation,

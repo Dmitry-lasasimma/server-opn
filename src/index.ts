@@ -5,6 +5,7 @@ import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 
 // Import Routes
+import authRoutes from "./routes/auth";
 import connectDB from "./config/database";
 import topupRoutes from "./routes/topup";
 import paymentHistoryRoutes from "./routes/paymentHistory";
@@ -33,6 +34,7 @@ connectDB();
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
 
 //Routes
+app.use("/v1/api/auths", authRoutes);
 app.use("/v1/api/topups", topupRoutes);
 app.use("/v1/api/payment-histories", paymentHistoryRoutes);
 app.use("/v1/api/wallets", walletRoutes);

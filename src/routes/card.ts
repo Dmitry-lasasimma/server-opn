@@ -12,7 +12,6 @@ import { validateUpdateDefaultCard } from "../validators/card";
 
 const router = express.Router();
 
-// router.post("/", checkAuthorizationMiddleware, validateCreateCard, createCard);
 router.post("/create-customer", checkAuthorizationMiddleware, validateCreateCard, createCard);
 
 router.get("/:id", checkAuthorizationMiddleware, getCardByID);

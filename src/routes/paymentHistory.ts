@@ -1,19 +1,19 @@
 import express, { type Request, type Response } from "express";
 import {
-	createPaymentHistory,
+	// createPaymentHistory,
 	getPaymentHistoryByID,
-	getPaymentHistories,
+	// getPaymentHistories,
 	updatePaymentHistoryByID,
 	// createPaymentWithStripe,
 	createPaymentWithOmise,
-	createPromptPayPayment,
-	createPointPayment,
-	handleOmiseWebhook,
-	getUserDashboardPaymentHistories,
-	getDashboardPaymentHistories,
-	createChargePaymentHistory,
-	createReservePaymentHistory,
-	createFeePaymentHistory,
+	// createPromptPayPayment,
+	// createPointPayment,
+	// handleOmiseWebhook,
+	// getUserDashboardPaymentHistories,
+	// getDashboardPaymentHistories,
+	// createChargePaymentHistory,
+	// createReservePaymentHistory,
+	// createFeePaymentHistory,
 } from "../controllers/paymentHistory";
 import { checkAuthorizationMiddleware, checkAuthorizationAdminRole } from "../middlewares";
 import {
@@ -28,33 +28,33 @@ import {
 
 const router = express.Router();
 
-router.post(
-	"/",
-	checkAuthorizationMiddleware,
-	validateCreatePaymentHistory,
-	createPaymentHistory,
-);
+// router.post(
+// 	"/",
+// 	checkAuthorizationMiddleware,
+// 	validateCreatePaymentHistory,
+// 	createPaymentHistory,
+// );
 
-router.post(
-	"/charge",
-	checkAuthorizationMiddleware,
-	validateCreateChargePaymentHistory,
-	createChargePaymentHistory,
-);
-router.post(
-	"/reserve",
-	checkAuthorizationMiddleware,
-	validateCreateReservePaymentHistory,
-	createReservePaymentHistory,
-);
-router.post(
-	"/fee",
-	checkAuthorizationMiddleware,
-	validateCreateFeePaymentHistory,
-	createFeePaymentHistory,
-);
+// router.post(
+// 	"/charge",
+// 	checkAuthorizationMiddleware,
+// 	validateCreateChargePaymentHistory,
+// 	createChargePaymentHistory,
+// );
+// router.post(
+// 	"/reserve",
+// 	checkAuthorizationMiddleware,
+// 	validateCreateReservePaymentHistory,
+// 	createReservePaymentHistory,
+// );
+// router.post(
+// 	"/fee",
+// 	checkAuthorizationMiddleware,
+// 	validateCreateFeePaymentHistory,
+// 	createFeePaymentHistory,
+// );
 
-router.get("/dashboard", checkAuthorizationMiddleware, checkAuthorizationAdminRole, getDashboardPaymentHistories);
+// router.get("/dashboard", checkAuthorizationMiddleware, checkAuthorizationAdminRole, getDashboardPaymentHistories);
 
 router.get(
 	"/:id",
@@ -64,10 +64,10 @@ router.get(
 );
 
 
-router.get("/dashboard/:id", checkAuthorizationMiddleware, getUserDashboardPaymentHistories);
+// router.get("/dashboard/:id", checkAuthorizationMiddleware, getUserDashboardPaymentHistories);
 
 
-router.get("/", checkAuthorizationMiddleware, getPaymentHistories);
+// router.get("/", checkAuthorizationMiddleware, getPaymentHistories);
 
 router.put(
 	"/:id",
@@ -90,21 +90,21 @@ router.post(
 	createPaymentWithOmise,
 );
 
-router.post(
-	"/omise-promptpay-payment",
-	checkAuthorizationMiddleware,
-	createPromptPayPayment,
-);
+// router.post(
+// 	"/omise-promptpay-payment",
+// 	checkAuthorizationMiddleware,
+// 	createPromptPayPayment,
+// );
 
-router.post(
-	"/point-payment",
-	checkAuthorizationMiddleware,
-	createPointPayment,
-);
+// router.post(
+// 	"/point-payment",
+// 	checkAuthorizationMiddleware,
+// 	createPointPayment,
+// );
 
-router.post(
-	"/omise-promptpay-webhook",
-	handleOmiseWebhook,
-);
+// router.post(
+// 	"/omise-promptpay-webhook",
+// 	handleOmiseWebhook,
+// );
 
 export default router;

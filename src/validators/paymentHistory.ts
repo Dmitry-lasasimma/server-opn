@@ -288,7 +288,7 @@ export const validateCreatePaymentWithOmise = (
 	res: Response,
 	next: NextFunction,
 ): void => {
-	const { currency, id } = req.body;
+	const { currency, price } = req.body;
 
 	if (!currency) {
 		res.status(400).json({
@@ -298,10 +298,10 @@ export const validateCreatePaymentWithOmise = (
 		return;
 	}
 
-	if (!id) {
+	if (!price) {
 		res.status(400).json({
 			message: messages.BAD_REQUEST,
-			detail: "Missing required fields: id",
+			detail: "Missing required fields: price",
 		});
 		return;
 	}
